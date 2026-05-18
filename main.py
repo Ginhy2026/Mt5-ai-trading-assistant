@@ -10,16 +10,50 @@ from notifier.feishu import FeishuNotifier
 from strategies.key_levels import detect_key_level_signal
 
 
-def analyze_once(settings, mt5_client: MT5Client, hermes: HermesClient, notifier: FeishuNotifier) -> bool:
-    tick = mt5_client.get_tick(settings.mt5_symbol)
-    candles = mt5_client.get_candles(settings.mt5_symbol, settings.mt5_timeframe, settings.mt5_bars)
+def _fetch_tf(mt5_client: MT5Client, symbol: str, timeframe: str, bars: int) -> tuple:
+    candles = mt5_client.get_candles(symbol, timeframe, bars)
     candles = add_indicators(candles).dropna()
     if candles.empty:
-        raise RuntimeError("Not enough candle data to calculate indicators.")
+        raise RuntimeError(f"Not enough candle data to calculate indicators for {timeframe}.")
 
     indicators = latest_indicator_snapshot(candles)
+    latest = candles.iloc[-1]
+    snapshot = {
+        "timeframe": timeframe,
+        "close": round(indicators["close"], 3),
+        "rsi": round(indicators["rsi"], 2),
+        "ema20": round(indicators["ema20"], 3),
+        "ema50": round(indicators["ema50"], 3),
+        "atr": round(indicators["atr"], 3),
+        "high": round(float(latest["high"]), 3),
+        "low": round(float(latest["low"]), 3),
+    }
+    return candles, snapshot
+
+
+def analyze_once(settings, mt5_client: MT5Client, hermes: HermesClient, notifier: FeishuNotifier) -> bool:
+    tick = mt5_client.get_tick(settings.mt5_symbol)
+    _, direction_tf = _fetch_tf(
+        mt5_client,
+        settings.mt5_symbol,
+        settings.mt5_tf_direction,
+        settings.mt5_tf_direction_bars,
+    )
+    _, swing_tf = _fetch_tf(
+        mt5_client,
+        settings.mt5_symbol,
+        settings.mt5_tf_swing,
+        settings.mt5_tf_swing_bars,
+    )
+    entry_candles, entry_tf = _fetch_tf(
+        mt5_client,
+        settings.mt5_symbol,
+        settings.mt5_tf_entry,
+        settings.mt5_tf_entry_bars,
+    )
+
     signal = detect_key_level_signal(
-        candles=candles,
+        candles=entry_candles,
         current_price=tick.mid,
         lookback=settings.key_level_lookback,
         atr_multiplier=settings.key_level_atr_multiplier,
@@ -28,7 +62,8 @@ def analyze_once(settings, mt5_client: MT5Client, hermes: HermesClient, notifier
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     status = (
-        f"[{now}] {settings.mt5_symbol} {settings.mt5_timeframe} "
+        f"[{now}] {settings.mt5_symbol} "
+        f"{direction_tf['timeframe']}/{swing_tf['timeframe']}/{entry_tf['timeframe']} "
         f"price={tick.mid:.3f}, trend={signal.trend}, "
         f"nearest={signal.nearest_level:.3f}({signal.level_type}), "
         f"distance={signal.distance:.3f}, threshold={signal.threshold:.3f}"
@@ -41,14 +76,12 @@ def analyze_once(settings, mt5_client: MT5Client, hermes: HermesClient, notifier
     print(f"{status} -> near key level, asking Hermes")
     context = {
         "symbol": settings.mt5_symbol,
-        "timeframe": settings.mt5_timeframe,
         "current_price": round(tick.mid, 3),
         "bid": round(tick.bid, 3),
         "ask": round(tick.ask, 3),
-        "rsi": round(indicators["rsi"], 2),
-        "ema20": round(indicators["ema20"], 3),
-        "ema50": round(indicators["ema50"], 3),
-        "atr": round(indicators["atr"], 3),
+        "direction": direction_tf,
+        "swing": swing_tf,
+        "entry": entry_tf,
         "trend": signal.trend,
         "nearest_support": round(signal.nearest_support, 3),
         "nearest_resistance": round(signal.nearest_resistance, 3),
@@ -92,7 +125,10 @@ def main() -> None:
         mt5_client.connect()
         print(
             "Monitor started: "
-            f"symbol={settings.mt5_symbol}, timeframe={settings.mt5_timeframe}, "
+            f"symbol={settings.mt5_symbol}, "
+            f"direction={settings.mt5_tf_direction}/{settings.mt5_tf_direction_bars}, "
+            f"swing={settings.mt5_tf_swing}/{settings.mt5_tf_swing_bars}, "
+            f"entry={settings.mt5_tf_entry}/{settings.mt5_tf_entry_bars}, "
             f"interval={settings.monitor_interval_seconds}s, "
             f"cooldown={settings.alert_cooldown_seconds}s"
         )

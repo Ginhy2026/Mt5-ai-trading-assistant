@@ -8,7 +8,7 @@ The first version only analyzes and notifies. It does **not** place orders.
 
 - Connect to MetaTrader 5.
 - Monitor real-time XAUUSD tick price.
-- Fetch the latest 100 candles.
+- Fetch H4, H1, and M15 candles for multi-timeframe analysis.
 - Calculate RSI, EMA20, EMA50, and ATR.
 - Detect whether price is near recent support/resistance.
 - Ask Hermes for a markdown trading report.
@@ -59,7 +59,9 @@ The script keeps running until you press `Ctrl+C`.
 Default monitor behavior:
 
 - Scans the market every `MONITOR_INTERVAL_SECONDS=60` seconds.
-- Calls Hermes only when price is near support/resistance.
+- Uses `MT5_TF_DIRECTION=H4`, `MT5_TF_SWING=H1`, and `MT5_TF_ENTRY=M15` by default.
+- Detects support/resistance on the entry timeframe.
+- Calls Hermes only when price is near support/resistance on the entry timeframe.
 - Sends at most one alert every `ALERT_COOLDOWN_SECONDS=900` seconds.
 
 Your broker may use suffixed symbols such as `XAUUSD+`, `CL-OIL`, or `EURUSD+`.

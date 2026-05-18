@@ -28,6 +28,12 @@ class Settings:
     mt5_symbol: str
     mt5_timeframe: str
     mt5_bars: int
+    mt5_tf_direction: str
+    mt5_tf_direction_bars: int
+    mt5_tf_swing: str
+    mt5_tf_swing_bars: int
+    mt5_tf_entry: str
+    mt5_tf_entry_bars: int
     monitor_interval_seconds: int
     alert_cooldown_seconds: int
     key_level_lookback: int
@@ -50,6 +56,12 @@ def load_settings() -> Settings:
         mt5_symbol=os.getenv("MT5_SYMBOL", "XAUUSD+").strip(),
         mt5_timeframe=os.getenv("MT5_TIMEFRAME", "M15").strip().upper(),
         mt5_bars=int(os.getenv("MT5_BARS", "100")),
+        mt5_tf_direction=os.getenv("MT5_TF_DIRECTION", "H4").strip().upper(),
+        mt5_tf_direction_bars=int(os.getenv("MT5_TF_DIRECTION_BARS", "60")),
+        mt5_tf_swing=os.getenv("MT5_TF_SWING", "H1").strip().upper(),
+        mt5_tf_swing_bars=int(os.getenv("MT5_TF_SWING_BARS", "72")),
+        mt5_tf_entry=os.getenv("MT5_TF_ENTRY", "M15").strip().upper(),
+        mt5_tf_entry_bars=int(os.getenv("MT5_TF_ENTRY_BARS", "96")),
         monitor_interval_seconds=int(os.getenv("MONITOR_INTERVAL_SECONDS", "60")),
         alert_cooldown_seconds=int(os.getenv("ALERT_COOLDOWN_SECONDS", "900")),
         key_level_lookback=int(os.getenv("KEY_LEVEL_LOOKBACK", "80")),

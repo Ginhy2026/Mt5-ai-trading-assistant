@@ -3,15 +3,16 @@ from __future__ import annotations
 import requests
 
 
-SYSTEM_PROMPT = """You are Hermes, a cautious trading analysis assistant.
-You analyze market context, key levels, indicators, and risk.
+SYSTEM_PROMPT = """You are Hermes, a cautious multi-timeframe trading analysis assistant.
+You analyze direction timeframe, swing timeframe, entry timeframe, key levels, indicators, and risk.
 Never claim certainty. Do not recommend automatic order placement.
-Return concise markdown in Chinese with these sections:
-- 当前趋势
-- 支撑阻力
-- 是否值得交易
-- 风险等级
-- 建议等待 / 观察 / 轻仓尝试
+Return concise markdown in Chinese with exactly these six sections:
+- 📊 多时间框架分析
+- 📈 当前趋势
+- 🎯 支撑阻力
+- ✅ 是否值得交易
+- ⚠️ 风险等级
+- 💡 建议
 """
 
 
@@ -43,22 +44,21 @@ class HermesClient:
 
 def _build_user_prompt(context: dict) -> str:
     return f"""
-请基于以下市场数据生成交易分析报告。
+请基于以下多时间框架市场数据生成交易分析报告。
 
 交易品种: {context["symbol"]}
-周期: {context["timeframe"]}
 当前价格: {context["current_price"]}
 Bid: {context["bid"]}
 Ask: {context["ask"]}
 
-指标:
-- RSI14: {context["rsi"]}
-- EMA20: {context["ema20"]}
-- EMA50: {context["ema50"]}
-- ATR14: {context["atr"]}
+{_tf_block("大方向", context["direction"])}
+
+{_tf_block("波段", context["swing"])}
+
+{_tf_block("入场", context["entry"])}
 
 关键位:
-- 趋势判断: {context["trend"]}
+- 入场周期趋势判断: {context["trend"]}
 - 最近支撑: {context["nearest_support"]}
 - 最近阻力: {context["nearest_resistance"]}
 - 最近关键位: {context["nearest_level"]} ({context["level_type"]})
@@ -68,6 +68,19 @@ Ask: {context["ask"]}
 
 要求:
 1. 只输出 markdown 报告。
-2. 不要自动下单，不要给绝对化结论。
-3. 结论必须在“建议等待 / 观察 / 轻仓尝试”中选择一个。
+2. 先判断大方向趋势，再看波段，最后给出入场建议。
+3. 三个时间框架方向一致可适当积极，方向冲突则保守等待。
+4. 不要自动下单，不要给绝对化结论。
+5. 结论必须在“建议等待 / 观察 / 轻仓尝试”中选择一个。
 """
+
+
+def _tf_block(label: str, tf: dict) -> str:
+    return f"""时间框架 - {label} ({tf["timeframe"]}):
+- Close: {tf["close"]}
+- RSI14: {tf["rsi"]}
+- EMA20: {tf["ema20"]}
+- EMA50: {tf["ema50"]}
+- ATR14: {tf["atr"]}
+- 最新K线高点: {tf["high"]}
+- 最新K线低点: {tf["low"]}"""
