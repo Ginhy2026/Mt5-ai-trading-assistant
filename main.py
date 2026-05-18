@@ -65,6 +65,7 @@ def analyze_once(settings, mt5_client: MT5Client, hermes: HermesClient, notifier
         f"[{now}] {settings.mt5_symbol} "
         f"{direction_tf['timeframe']}/{swing_tf['timeframe']}/{entry_tf['timeframe']} "
         f"price={tick.mid:.3f}, trend={signal.trend}, "
+        f"support={signal.nearest_support:.3f}, resistance={signal.nearest_resistance:.3f}, "
         f"nearest={signal.nearest_level:.3f}({signal.level_type}), "
         f"distance={signal.distance:.3f}, threshold={signal.threshold:.3f}"
     )
