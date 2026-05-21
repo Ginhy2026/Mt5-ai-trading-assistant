@@ -54,6 +54,27 @@ Start continuous monitoring:
 python main.py
 ```
 
+Start monitoring with position tracking and daily review scheduler:
+
+```powershell
+python main.py --with-tracker
+```
+
+Ask Hermes before opening a trade:
+
+```powershell
+python ask.py
+python ask.py buy
+python ask.py sell
+python ask.py "我想等H4回调到EMA20做多"
+```
+
+Start the local Web UI:
+
+```powershell
+streamlit run ui/app.py
+```
+
 The script keeps running until you press `Ctrl+C`.
 
 Default monitor behavior:
@@ -63,6 +84,8 @@ Default monitor behavior:
 - Detects support/resistance on the entry timeframe.
 - Calls Hermes only when price is near support/resistance on the entry timeframe.
 - Sends at most one alert every `ALERT_COOLDOWN_SECONDS=900` seconds.
+- Tracks MT5 positions every `POSITION_POLL_INTERVAL=10` seconds when `--with-tracker` is enabled.
+- Runs the daily review at `DAILY_REVIEW_TIME=00:00`, reviewing the previous calendar day.
 
 Your broker may use suffixed symbols such as `XAUUSD+`, `CL-OIL`, or `EURUSD+`.
 Use the exact symbol name shown in MT5 Market Watch.

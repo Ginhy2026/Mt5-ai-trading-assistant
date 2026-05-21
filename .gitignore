@@ -9,3 +9,4 @@ env/
 .ruff_cache/
 logs/
 *.log
+data/

@@ -36,6 +36,11 @@ class Settings:
     mt5_tf_entry_bars: int
     monitor_interval_seconds: int
     alert_cooldown_seconds: int
+    position_poll_interval: int
+    trade_db_path: str
+    daily_review_time: str
+    obsidian_vault_path: str
+    obsidian_trade_dir: str
     key_level_lookback: int
     key_level_atr_multiplier: float
     key_level_price_pct: float
@@ -64,6 +69,14 @@ def load_settings() -> Settings:
         mt5_tf_entry_bars=int(os.getenv("MT5_TF_ENTRY_BARS", "96")),
         monitor_interval_seconds=int(os.getenv("MONITOR_INTERVAL_SECONDS", "60")),
         alert_cooldown_seconds=int(os.getenv("ALERT_COOLDOWN_SECONDS", "900")),
+        position_poll_interval=int(os.getenv("POSITION_POLL_INTERVAL", "10")),
+        trade_db_path=os.getenv("TRADE_DB_PATH", "data/trades.db").strip(),
+        daily_review_time=os.getenv("DAILY_REVIEW_TIME", "00:00").strip(),
+        obsidian_vault_path=os.getenv(
+            "OBSIDIAN_VAULT_PATH",
+            r"D:\YI\Obsidian\Stock\Ginhy's Espace",
+        ).strip(),
+        obsidian_trade_dir=os.getenv("OBSIDIAN_TRADE_DIR", "交易日记").strip(),
         key_level_lookback=int(os.getenv("KEY_LEVEL_LOOKBACK", "80")),
         key_level_atr_multiplier=float(os.getenv("KEY_LEVEL_ATR_MULTIPLIER", "0.35")),
         key_level_price_pct=float(os.getenv("KEY_LEVEL_PRICE_PCT", "0.001")),

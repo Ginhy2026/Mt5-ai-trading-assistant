@@ -3,11 +3,13 @@ import time
 from datetime import datetime
 
 from ai.hermes_client import HermesClient
+from analytics.daily_review import start_daily_review_scheduler
 from config.settings import load_settings
 from indicators.technical import add_indicators, latest_indicator_snapshot
 from mt5_client import MT5Client
 from notifier.feishu import FeishuNotifier
 from strategies.key_levels import detect_key_level_signal
+from trade_monitor.position_tracker import PositionTracker
 
 
 def _fetch_tf(mt5_client: MT5Client, symbol: str, timeframe: str, bars: int) -> tuple:
@@ -101,6 +103,7 @@ def analyze_once(settings, mt5_client: MT5Client, hermes: HermesClient, notifier
 def main() -> None:
     parser = argparse.ArgumentParser(description="Monitor MT5 market data and send AI alerts near key levels.")
     parser.add_argument("--once", action="store_true", help="Run one monitor cycle and exit.")
+    parser.add_argument("--with-tracker", action="store_true", help="Start position tracker and daily review scheduler.")
     args = parser.parse_args()
 
     settings = load_settings()
@@ -121,6 +124,8 @@ def main() -> None:
         webhook_url=settings.feishu_webhook_url,
         secret=settings.feishu_secret,
     )
+    tracker = None
+    scheduler = None
 
     try:
         mt5_client.connect()
@@ -133,6 +138,10 @@ def main() -> None:
             f"interval={settings.monitor_interval_seconds}s, "
             f"cooldown={settings.alert_cooldown_seconds}s"
         )
+        if args.with_tracker:
+            tracker = PositionTracker(settings.trade_db_path, settings.position_poll_interval)
+            tracker.start()
+            scheduler = start_daily_review_scheduler(settings)
 
         if args.once:
             analyze_once(settings, mt5_client, hermes, notifier)
@@ -155,6 +164,10 @@ def main() -> None:
     except KeyboardInterrupt:
         print("Monitoring stopped by user.")
     finally:
+        if tracker:
+            tracker.stop()
+        if scheduler:
+            scheduler.shutdown(wait=False)
         mt5_client.shutdown()
 
 
